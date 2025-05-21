@@ -266,18 +266,24 @@ def forward_without_logits(
     return_dict = return_dict if return_dict is not None else self.config.use_return_dict
 
     # decoder outputs consists of (dec_features, layer_state, dec_hidden, dec_attn)
-    outputs = self.model(
-        input_ids=input_ids,
-        attention_mask=attention_mask,
-        position_ids=position_ids,
-        past_key_values=past_key_values,
-        inputs_embeds=inputs_embeds,
-        use_cache=use_cache,
-        output_attentions=output_attentions,
-        output_hidden_states=output_hidden_states,
-        return_dict=return_dict,
-        cache_position=cache_position,
-    )
+    model_kwargs = {
+        "input_ids": input_ids,
+        "attention_mask": attention_mask,
+        "position_ids": position_ids,
+        "past_key_values": past_key_values,
+        "inputs_embeds": inputs_embeds,
+        "use_cache": use_cache,
+        "output_attentions": output_attentions,
+        "output_hidden_states": output_hidden_states,
+        "return_dict": return_dict,
+    }
+    # Conditionally add cache_position
+    # Check if the model is DeepseekV2Model, if not, pass cache_position
+    # This is a workaround for DeepseekV2Model not accepting cache_position
+    if "DeepseekV2Model" not in str(type(self.model)):
+        model_kwargs["cache_position"] = cache_position
+    
+    outputs = self.model(**model_kwargs)
 
     hidden_states = outputs[0]
 
